@@ -13,12 +13,16 @@ public class Character : MonoBehaviour
         Attack,
         BeginShoot,
         Shoot,
+        Death,
+        Dead,
+        GoToAtack
     }
 
     public enum Weapon
     {
         Pistol,
         Bat,
+        Hands
     }
 
     Animator animator;
@@ -47,6 +51,8 @@ public class Character : MonoBehaviour
     [ContextMenu("Attack")]
     void AttackEnemy()
     {
+        if (state == State.Dead) return;
+
         switch (weapon) {
             case Weapon.Bat:
                 state = State.RunningToEnemy;
@@ -54,11 +60,16 @@ public class Character : MonoBehaviour
             case Weapon.Pistol:
                 state = State.BeginShoot;
                 break;
+            case Weapon.Hands:
+                state = State.RunningToEnemy;
+                break;
         }
     }
 
     bool RunTowards(Vector3 targetPosition, float distanceFromTarget)
     {
+        if (state == State.Dead) return false;
+
         Vector3 distance = targetPosition - transform.position;
         if (distance.magnitude < 0.00001f) {
             transform.position = targetPosition;
@@ -79,6 +90,15 @@ public class Character : MonoBehaviour
 
         transform.position = targetPosition;
         return true;
+    }
+
+    public void KillEnemy()
+    {
+        var ch = target.GetComponent<Character>();
+
+        if (ch.state == Character.State.Dead) return;
+
+        ch.SetState(Character.State.Death);
     }
 
     void FixedUpdate()
@@ -112,6 +132,14 @@ public class Character : MonoBehaviour
             case State.BeginShoot:
                 animator.SetTrigger("Shoot");
                 state = State.Shoot;
+                break;
+
+            case State.Death:
+                animator.SetTrigger("Death");
+                state = State.Dead;
+                break;
+
+            case State.Dead:
                 break;
 
             case State.Shoot:
